@@ -31,6 +31,8 @@ touch /etc/config/passwall_show >/dev/null 2>&1
 [ ! -s "/etc/config/passwall" ] && cp -f /usr/share/passwall/0_default_config /etc/config/passwall
 
 chmod +x /usr/share/passwall/*.sh
+chmod +x /etc/init.d/passwall
+chmod +x /etc/init.d/passwall_server
 
 use_nft=$(uci -q get passwall.@global_forwarding[0].use_nft || echo "0")
 [ "${use_nft}" = "0" ] && {
