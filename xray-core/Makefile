@@ -1,61 +1,35 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=Xray-core
-PKG_VERSION:=25.5.16
+PKG_NAME:=xray-core
+PKG_VERSION:=25.3.31
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/XTLS/Xray-core/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=c856cd9abed7d28d3c7b856c0661cec5c85ba0669affa740c979cf40c2f73ee4
+PKG_SOURCE:=xray-$(PKG_VERSION).gz
+PKG_SOURCE_URL:=https://github.com/pru79/pruhaha/raw/refs/heads/main/
+PKG_HASH:=skip
 
-PKG_MAINTAINER:=Tianling Shen <cnsztl@immortalwrt.org>
+PKG_MAINTAINER:=You <xray-core@xray-core.com>
 PKG_LICENSE:=MPL-2.0
-PKG_LICENSE_FILES:=LICENSE
-
-PKG_BUILD_DEPENDS:=golang/host
-PKG_BUILD_PARALLEL:=1
-PKG_USE_MIPS16:=0
-PKG_BUILD_FLAGS:=no-mips16
-
-GO_PKG:=github.com/xtls/xray-core
-GO_PKG_BUILD_PKG:=$(GO_PKG)/main
-GO_PKG_LDFLAGS_X:= \
-	$(GO_PKG)/core.build=OpenWrt \
-	$(GO_PKG)/core.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
-include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
-
-define Package/xray/template
-  TITLE:=A platform for building proxies to bypass network restrictions
-  SECTION:=net
-  CATEGORY:=Network
-  URL:=https://xtls.github.io
-endef
 
 define Package/xray-core
-  $(call Package/xray/template)
-  DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle
-endef
-
-define Package/xray/description
-  Xray, Penetrates Everything. It helps you to build your own computer network.
-  It secures your network connections and thus protects your privacy.
+  TITLE:=Xray-core Prebuilt Binary
+  SECTION:=net
+  CATEGORY:=Network
+  URL:=https://github.com/XTLS/Xray-core
+  DEPENDS:=+ca-bundle
 endef
 
 define Package/xray-core/description
-  $(call Package/xray/description)
-endef
-
-define Package/xray-core/conffiles
-/etc/xray/
-/etc/config/xray
+  Xray, Penetrates Everything. Precompiled version for OpenWrt.
 endef
 
 define Package/xray-core/install
-	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/usr/bin/
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/main $(1)/usr/bin/xray
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(CP) $(DL_DIR)/$(PKG_SOURCE) $(1)/usr/bin/xray.gz
+	gzip -d $(1)/usr/bin/xray.gz
+	chmod +x $(1)/usr/bin/xray
 endef
 
 $(eval $(call BuildPackage,xray-core))
