@@ -1,11 +1,9 @@
 local api = require "luci.passwall.api"
-local appname = "passwall"
-local has_xray = api.finded_com("xray")
-local has_singbox = api.finded_com("sing-box")
+local appname = api.appname
+local has_v2ray = api.is_finded("v2ray")
+local has_xray = api.is_finded("xray")
 
 m = Map(appname)
-api.set_apply_on_parse(m)
-
 -- [[ Rule Settings ]]--
 s = m:section(TypedSection, "global_rules", translate("Rule status"))
 s.anonymous = true
@@ -41,38 +39,8 @@ o = s:option(DynamicList, "chnlist_url", translate("China List(Chnlist) Update U
 o:value("https://fastly.jsdelivr.net/gh/felixonmars/dnsmasq-china-list/accelerated-domains.china.conf", translate("felixonmars/domains.china"))
 o:value("https://fastly.jsdelivr.net/gh/felixonmars/dnsmasq-china-list/apple.china.conf", translate("felixonmars/apple.china"))
 o:value("https://fastly.jsdelivr.net/gh/felixonmars/dnsmasq-china-list/google.china.conf", translate("felixonmars/google.china"))
-o:value("https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/china-list.txt", translate("Loyalsoldier/china-list"))
-o:value("https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/apple-cn.txt", translate("Loyalsoldier/apple-cn"))
-o:value("https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/google-cn.txt", translate("Loyalsoldier/google-cn"))
 
-if has_xray or has_singbox then
-	o = s:option(ListValue, "geoip_url", translate("GeoIP Update URL"))
-	o:value("https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest", translate("Loyalsoldier/geoip"))
-	o:value("https://api.github.com/repos/MetaCubeX/meta-rules-dat/releases/latest", translate("MetaCubeX/geoip"))
-	o.default = "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest"
-
-	o = s:option(ListValue, "geosite_url", translate("Geosite Update URL"))
-	o:value("https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest", translate("Loyalsoldier/geosite"))
-	o:value("https://api.github.com/repos/MetaCubeX/meta-rules-dat/releases/latest", translate("MetaCubeX/geosite"))
-	o.default = "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest"
-
-	o = s:option(Value, "v2ray_location_asset", translate("Location of Geo rule files"), translate("This variable specifies a directory where geoip.dat and geosite.dat files are."))
-	o.default = "/usr/share/v2ray/"
-	o.placeholder = "/usr/share/v2ray/"
-	o.rmempty = false
-
-	if api.is_finded("geoview") then
-		o = s:option(Flag, "enable_geoview", translate("Enable Geo Data Parsing"))
-		o.default = 0
-		o.rmempty = false
-		o.description = "<ul>"
-			.. "<li>" .. translate("Experimental feature.") .. "</li>"
-			.. "<li>" .. "1." .. translate("Analyzes and preloads GeoIP/Geosite data to enhance the shunt performance of Sing-box/Xray.") .. "</li>"
-			.. "<li>" .. "2." .. translate("Once enabled, the rule list can support GeoIP/Geosite rules.") .. "</li>"
-			.. "<li>" .. translate("Note: Increases resource usage; Geosite analysis is only supported in ChinaDNS-NG and SmartDNS modes.") .. "</li>"
-			.. "</ul>"
-	end
-end
+s:append(Template(appname .. "/rule/rule_version"))
 
 ---- Auto Update
 o = s:option(Flag, "auto_update", translate("Enable auto update rules"))
@@ -80,45 +48,25 @@ o.default = 0
 o.rmempty = false
 
 ---- Week Update
-o = s:option(ListValue, "week_update", translate("Update Mode"))
-o:value(8, translate("Loop Mode"))
+o = s:option(ListValue, "week_update", translate("Week update rules"))
 o:value(7, translate("Every day"))
-o:value(1, translate("Every Monday"))
-o:value(2, translate("Every Tuesday"))
-o:value(3, translate("Every Wednesday"))
-o:value(4, translate("Every Thursday"))
-o:value(5, translate("Every Friday"))
-o:value(6, translate("Every Saturday"))
-o:value(0, translate("Every Sunday"))
-o.default = 7
+for e = 1, 6 do o:value(e, translate("Week") .. e) end
+o:value(0, translate("Week") .. translate("day"))
+o.default = 0
 o:depends("auto_update", true)
-o.rmempty = true
 
 ---- Time Update
-o = s:option(ListValue, "time_update", translate("Update Time(every day)"))
-for t = 0, 23 do o:value(t, t .. ":00") end
+o = s:option(ListValue, "time_update", translate("Day update rules"))
+for e = 0, 23 do o:value(e, e .. translate("oclock")) end
 o.default = 0
-o:depends("week_update", "0")
-o:depends("week_update", "1")
-o:depends("week_update", "2")
-o:depends("week_update", "3")
-o:depends("week_update", "4")
-o:depends("week_update", "5")
-o:depends("week_update", "6")
-o:depends("week_update", "7")
-o.rmempty = true
+o:depends("auto_update", true)
 
----- Interval Update
-o = s:option(ListValue, "interval_update", translate("Update Interval(hour)"))
-for t = 1, 24 do o:value(t, t .. " " .. translate("hour")) end
-o.default = 2
-o:depends("week_update", "8")
-o.rmempty = true
+if has_v2ray or has_xray then
+	o = s:option(Value, "v2ray_location_asset", translate("Location of V2ray/Xray asset"), translate("This variable specifies a directory where geoip.dat and geosite.dat files are."))
+	o.default = "/usr/share/v2ray/"
+	o.rmempty = false
 
-s:append(Template(appname .. "/rule/rule_version"))
-
-if has_xray or has_singbox then
-	s = m:section(TypedSection, "shunt_rules", "Sing-Box/Xray " .. translate("Shunt Rule"), "<a style='color: red'>" .. translate("Please note attention to the priority, the higher the order, the higher the priority.") .. "</a>")
+	s = m:section(TypedSection, "shunt_rules", "V2ray/Xray " .. translate("Shunt Rule"), "<a style='color: red'>" .. translate("Please note attention to the priority, the higher the order, the higher the priority.") .. "</a>")
 	s.template = "cbi/tblsection"
 	s.anonymous = false
 	s.addremove = true

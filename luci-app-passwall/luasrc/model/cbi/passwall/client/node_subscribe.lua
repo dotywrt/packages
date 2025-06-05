@@ -1,70 +1,35 @@
 local api = require "luci.passwall.api"
-local uci = api.uci
-local appname = "passwall"
+local appname = api.appname
 local has_ss = api.is_finded("ss-redir")
 local has_ss_rust = api.is_finded("sslocal")
 local has_trojan_plus = api.is_finded("trojan-plus")
-local has_singbox = api.finded_com("sing-box")
-local has_xray = api.finded_com("xray")
-local has_hysteria2 = api.finded_com("hysteria")
-local ss_type = {}
+local has_v2ray = api.is_finded("v2ray")
+local has_xray = api.is_finded("xray")
+local has_trojan_go = api.is_finded("trojan-go")
+local ss_aead_type = {}
 local trojan_type = {}
-local vmess_type = {}
-local vless_type = {}
-local hysteria2_type = {}
 if has_ss then
-	local s = "shadowsocks-libev"
-	table.insert(ss_type, s)
+	ss_aead_type[#ss_aead_type + 1] = "shadowsocks-libev"
 end
 if has_ss_rust then
-	local s = "shadowsocks-rust"
-	table.insert(ss_type, s)
+	ss_aead_type[#ss_aead_type + 1] = "shadowsocks-rust"
 end
 if has_trojan_plus then
-	local s = "trojan-plus"
-	table.insert(trojan_type, s)
+	trojan_type[#trojan_type + 1] = "trojan-plus"
 end
-if has_singbox then
-	local s = "sing-box"
-	table.insert(trojan_type, s)
-	table.insert(ss_type, s)
-	table.insert(vmess_type, s)
-	table.insert(vless_type, s)
-	table.insert(hysteria2_type, s)
+if has_v2ray then
+	trojan_type[#trojan_type + 1] = "v2ray"
+	ss_aead_type[#ss_aead_type + 1] = "v2ray"
 end
 if has_xray then
-	local s = "xray"
-	table.insert(trojan_type, s)
-	table.insert(ss_type, s)
-	table.insert(vmess_type, s)
-	table.insert(vless_type, s)
+	trojan_type[#trojan_type + 1] = "xray"
+	ss_aead_type[#ss_aead_type + 1] = "xray"
 end
-if has_hysteria2 then
-	local s = "hysteria2"
-	table.insert(hysteria2_type, s)
+if has_trojan_go then
+	trojan_type[#trojan_type + 1] = "trojan-go"
 end
 
 m = Map(appname)
-
-function m.commit_handler(self)
-	if self.no_commit then
-		return
-	end
-	self.uci:foreach(appname, "subscribe_list", function(e)
-		self:del(e[".name"], "md5")
-	end)
-end
-
-if api.is_js_luci() then
-	m.apply_on_parse = false
-	m.on_after_apply = function(self)
-		uci:foreach(appname, "subscribe_list", function(e)
-			uci:delete(appname, e[".name"], "md5")
-		end)
-		uci:commit(appname)
-		api.showMsg_Redirect()
-	end
-end
 
 -- [[ Subscribe Settings ]]--
 s = m:section(TypedSection, "global_subscribe", "")
@@ -81,71 +46,31 @@ o = s:option(DynamicList, "filter_discard_list", translate("Discard List"))
 
 o = s:option(DynamicList, "filter_keep_list", translate("Keep List"))
 
-if #ss_type > 0 then
-	o = s:option(ListValue, "ss_type", translatef("%s Node Use Type", "Shadowsocks"))
-	for key, value in pairs(ss_type) do
-		o:value(value)
+if #ss_aead_type > 0 then
+	o = s:option(ListValue, "ss_aead_type", translate("SS AEAD Node Use Type"))
+	for key, value in pairs(ss_aead_type) do
+		o:value(value, translate(value:gsub("^%l",string.upper)))
 	end
 end
 
 if #trojan_type > 0 then
-	o = s:option(ListValue, "trojan_type", translatef("%s Node Use Type", "Trojan"))
+	o = s:option(ListValue, "trojan_type", translate("Trojan Node Use Type"))
 	for key, value in pairs(trojan_type) do
-		o:value(value)
+		o:value(value, translate(value:gsub("^%l",string.upper)))
 	end
 end
-
-if #vmess_type > 0 then
-	o = s:option(ListValue, "vmess_type", translatef("%s Node Use Type", "VMess"))
-	for key, value in pairs(vmess_type) do
-		o:value(value)
-	end
-	if has_xray then
-		o.default = "xray"
-	end
-end
-
-if #vless_type > 0 then
-	o = s:option(ListValue, "vless_type", translatef("%s Node Use Type", "VLESS"))
-	for key, value in pairs(vless_type) do
-		o:value(value)
-	end
-	if has_xray then
-		o.default = "xray"
-	end
-end
-
-if #hysteria2_type > 0 then
-	o = s:option(ListValue, "hysteria2_type", translatef("%s Node Use Type", "Hysteria2"))
-	for key, value in pairs(hysteria2_type) do
-		o:value(value)
-	end
-	if has_hysteria2 then
-		o.default = "hysteria2"
-	end
-end
-
-o = s:option(ListValue, "domain_strategy", "Sing-box " .. translate("Domain Strategy"), translate("Set the default domain resolution strategy for the sing-box node."))
-o.default = ""
-o:value("", translate("Auto"))
-o:value("prefer_ipv4", translate("Prefer IPv4"))
-o:value("prefer_ipv6", translate("Prefer IPv6"))
-o:value("ipv4_only", translate("IPv4 Only"))
-o:value("ipv6_only", translate("IPv6 Only"))
 
 ---- Subscribe Delete All
 o = s:option(Button, "_stop", translate("Delete All Subscribe Node"))
 o.inputstyle = "remove"
 function o.write(e, e)
 	luci.sys.call("lua /usr/share/" .. appname .. "/subscribe.lua truncate > /dev/null 2>&1")
-	m.no_commit = true
 end
 
 o = s:option(Button, "_update", translate("Manual subscription All"))
 o.inputstyle = "apply"
 function o.write(t, n)
 	luci.sys.call("lua /usr/share/" .. appname .. "/subscribe.lua start > /dev/null 2>&1 &")
-	m.no_commit = true
 	luci.http.redirect(api.url("log"))
 end
 
@@ -156,7 +81,6 @@ s.sortable = true
 s.template = "cbi/tblsection"
 s.extedit = api.url("node_subscribe_config", "%s")
 function s.create(e, t)
-	m.no_commit = true
 	local id = TypedSection.create(e, t)
 	luci.http.redirect(e.extedit:format(id))
 end
@@ -179,23 +103,17 @@ o.validate = function(self, value, t)
 	end
 end
 
-o = s:option(DummyValue, "_node_count", translate("Subscribe Info"))
+o = s:option(DummyValue, "_node_count")
 o.rawhtml = true
 o.cfgvalue = function(t, n)
 	local remark = m:get(n, "remark") or ""
-	local str = m:get(n, "rem_traffic") or ""
-	local expired_date = m:get(n, "expired_date") or ""
-	if expired_date ~= "" then
-		str = str .. (str ~= "" and "/" or "") .. expired_date
-	end
-	str = str ~= "" and "<br>" .. str or ""
 	local num = 0
 	m.uci:foreach(appname, "nodes", function(s)
 		if s["add_from"] ~= "" and s["add_from"] == remark then
 			num = num + 1
 		end
 	end)
-	return string.format("%s%s", translate("Node num") .. ": " .. num, str)
+	return string.format("<span title='%s' style='color:red'>%s</span>", remark .. " " .. translate("Node num") .. ": " .. num, num)
 end
 
 o = s:option(Value, "url", translate("Subscribe URL"))
@@ -207,14 +125,12 @@ o.inputstyle = "remove"
 function o.write(t, n)
 	local remark = m:get(n, "remark") or ""
 	luci.sys.call("lua /usr/share/" .. appname .. "/subscribe.lua truncate " .. remark .. " > /dev/null 2>&1")
-	m.no_commit = true
 end
 
 o = s:option(Button, "_update", translate("Manual subscription"))
 o.inputstyle = "apply"
 function o.write(t, n)
 	luci.sys.call("lua /usr/share/" .. appname .. "/subscribe.lua start " .. n .. " > /dev/null 2>&1 &")
-	m.no_commit = true
 	luci.http.redirect(api.url("log"))
 end
 
