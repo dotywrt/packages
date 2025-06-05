@@ -19,6 +19,7 @@ if not config_file then
     fs.writefile(config_file, "# TTLChanger rules will go here\n")
 end
 
+-- Clean up /etc/nftables.conf to prevent duplicates
 local main_nft_conf = "/etc/nftables.conf"
 local include_line = 'include "' .. config_file .. '"'
 local nft_conf_data = fs.readfile(main_nft_conf) or ""
@@ -33,15 +34,19 @@ for line in nft_conf_data:gmatch("[^\r\n]+") do
     end
 end
 
+-- Add include line if not already present
 if not seen[include_line] then
     table.insert(cleaned_lines, include_line)
 end
 
 fs.writefile(main_nft_conf, table.concat(cleaned_lines, "\n") .. "\n")
 
+-- LuCI UI part
 local m = Map("ttlchanger", "TTL Changer", [[
 <p style="display: flex; align-items: center;">
     If you like my work, please consider supporting me:
+
+    <!-- GitHub Star -->
     <img id="star" 
          src="/luci-static/resources/TTLcontrol/Star.svg?654407727g" 
          loading="lazy" 
@@ -51,6 +56,8 @@ local m = Map("ttlchanger", "TTL Changer", [[
          style="margin-left: 10px;" 
          onerror="return imgerrorfuns(this,'https://img.shields.io/badge/Star--lightgrey?logo=github&amp;style=social')" 
          onclick="window.open('https://github.com/dotywrt', '_blank')">
+
+    <!-- Buy Me a Coffee -->
     <img id="sponsor" 
          src="/luci-static/resources/TTLcontrol/Sponsor.svg?308407727" 
          loading="lazy" 
@@ -60,6 +67,8 @@ local m = Map("ttlchanger", "TTL Changer", [[
          style="margin-left: 10px;" 
          onerror="return imgerrorfuns(this,'https://img.shields.io/badge/Sponsor--lightgrey?logo=ko-fi&amp;style=social')" 
          onclick="window.open('https://buymeacoffee.com/dotywrt', '_blank')">
+
+    <!-- Telegram Channel -->
     <img id="telegram" 
          src="/luci-static/resources/TTLcontrol/Telegram.svg?308407727" 
          loading="lazy" 
@@ -68,7 +77,6 @@ local m = Map("ttlchanger", "TTL Changer", [[
          onerror="return imgerrorfuns(this,'https://img.shields.io/badge/Telegram--lightgrey?logo=Telegram&amp;style=social')" 
          onclick="window.open('https://t.me/dotycat', '_blank')">
 </p>
-<br/>
 ]])
 
 
