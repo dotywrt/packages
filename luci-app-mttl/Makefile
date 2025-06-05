@@ -2,8 +2,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-mttl
-PKG_VERSION:=1.2
-PKG_RELEASE:=1
+PKG_VERSION:=1.2.b1
+PKG_RELEASE:=2
 
 PKG_MAINTAINER:=dotycat <support@dotycat.com>
 PKG_LICENSE:=GPL-3.0
