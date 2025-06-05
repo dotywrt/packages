@@ -299,7 +299,9 @@ end
 if has_xray then
 	dns_mode:value("xray", "Xray")
 end
-dns_mode:value("udp", translatef("Requery DNS By %s", "UDP"))
+dns_mode:value("udp", translatef("Requery DNS By %s", translate("UDP Node")))
+dns_mode:value("custom", translate("Custom DNS") .. "(UDP)")
+dns_mode:value("nonuse", translate("No Filter"))
 
 o = s:taboption("DNS", ListValue, "v2ray_dns_mode", " ")
 o:value("tcp", "TCP")
