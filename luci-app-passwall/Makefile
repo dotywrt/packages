@@ -180,4 +180,9 @@ endef
 
 include $(TOPDIR)/feeds/luci/luci.mk
 
+define Package/$(PKG_NAME)/install
+	$(call Package/luci/install,$(1))
+	chmod 755 $(1)/etc/init.d/passwall || true
+	chmod 755 $(1)/etc/init.d/passwall_server || true
+endef
 # call BuildPackage - OpenWrt buildroot signature
