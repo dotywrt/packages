@@ -67,8 +67,7 @@ local m = Map("ttlchanger", "TTL Changer", [[
          style="margin-left: 10px;" 
          onerror="return imgerrorfuns(this,'https://img.shields.io/badge/Telegram--lightgrey?logo=Telegram&amp;style=social')" 
          onclick="window.open('https://t.me/dotycat', '_blank')">
-</p>
-<br/>
+</p> 
 ]])
 
 
