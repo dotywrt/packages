@@ -79,21 +79,26 @@ end
 local s = m:section(TypedSection, "ttl", "")
 s.anonymous = true
 
-local mode = s:option(ListValue, "mode", "TTL Mode")
+local mode = s:option(ListValue, "mode", "<b>TTL Mode</b>")
 mode.default = "off"
 mode:value("off", "Off")
 mode:value("64", "Force TTL to 64")
 mode:value("custom", "Set Custom TTL")
 
-local custom = s:option(Value, "custom_value", "Custom TTL Value")
+local custom = s:option(Value, "custom_value", "<b>Custom TTL Value</b>")
 custom.datatype = "uinteger"
 custom.default = "65"
 custom:depends("mode", "custom")
 custom.description = "Enter a custom TTL/Hop Limit value (e.g., 64 or 65)"
 
-local author = s:option(DummyValue, "_author", "APP Info")
+local author = s:option(DummyValue, "_author", "<b>TTL Changer</b>")
 author.rawhtml = true
-author.value = [[* Configure TTL or Hop Limit values for outgoing packets.<br/>* Changing TTL may help bypass certain ISP restrictions.]]
+author.value = [[* Configure TTL or Hop Limit values for outgoing packets.
+<br/>* Changing TTL may help bypass certain ISP restrictions.
+<br/>* <b>TTL OFF</b> - Enables IPv6 support..
+<br/>* <b>TTL 64</b> - Bypasses host port data.
+<br/>* <b>Note</b> If you lose internet connection after setting TTL, please reboot your modem.
+]]
 
 function m.on_commit(map)
     local mode_val = uci:get("ttlchanger", "@ttl[0]", "mode") or "off"
