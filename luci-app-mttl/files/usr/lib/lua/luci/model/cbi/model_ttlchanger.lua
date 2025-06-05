@@ -150,7 +150,8 @@ function m.on_commit(map)
     fs.writefile(config_file, updated .. "\n" .. new_rules .. "\n")
     sys.call("/etc/init.d/firewall restart")
     sys.call("/etc/init.d/network restart")
-    sys.call('echo -e "AT+CFUN=1,1\\r" > /dev/ttyUSB3')
+    sys.call("sleep 2")
+    sys.call('echo "AT+CFUN=1" > /dev/ttyUSB3')
 end
 
 return m
