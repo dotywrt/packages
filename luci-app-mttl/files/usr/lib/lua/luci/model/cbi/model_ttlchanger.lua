@@ -1,3 +1,4 @@
+
 local fs = require "nixio.fs"
 local uci = require "luci.model.uci".cursor()
 local sys = require "luci.sys"
@@ -18,7 +19,6 @@ if not config_file then
     fs.writefile(config_file, "# TTLChanger rules will go here\n")
 end
 
--- Clean up /etc/nftables.conf to prevent duplicates
 local main_nft_conf = "/etc/nftables.conf"
 local include_line = 'include "' .. config_file .. '"'
 local nft_conf_data = fs.readfile(main_nft_conf) or ""
@@ -33,18 +33,44 @@ for line in nft_conf_data:gmatch("[^\r\n]+") do
     end
 end
 
--- Add include line if not already present
 if not seen[include_line] then
     table.insert(cleaned_lines, include_line)
 end
 
 fs.writefile(main_nft_conf, table.concat(cleaned_lines, "\n") .. "\n")
 
--- LuCI UI part
 local m = Map("ttlchanger", "TTL Changer", [[
-Configure TTL or Hop Limit values for outgoing packets. 
-Changing TTL may help bypass certain ISP restrictions.
+<p style="display: flex; align-items: center;">
+    If you like my work, please consider supporting me:
+    <img id="star" 
+         src="/luci-static/resources/TTLcontrol/Star.svg?654407727g" 
+         loading="lazy" 
+         alt="Star" 
+         width="50px" 
+         height="20px" 
+         style="margin-left: 10px;" 
+         onerror="return imgerrorfuns(this,'https://img.shields.io/badge/Star--lightgrey?logo=github&amp;style=social')" 
+         onclick="window.open('https://github.com/dotywrt', '_blank')">
+    <img id="sponsor" 
+         src="/luci-static/resources/TTLcontrol/Sponsor.svg?308407727" 
+         loading="lazy" 
+         alt="Sponsor" 
+         width="73px" 
+         height="20px" 
+         style="margin-left: 10px;" 
+         onerror="return imgerrorfuns(this,'https://img.shields.io/badge/Sponsor--lightgrey?logo=ko-fi&amp;style=social')" 
+         onclick="window.open('https://buymeacoffee.com/dotywrt', '_blank')">
+    <img id="telegram" 
+         src="/luci-static/resources/TTLcontrol/Telegram.svg?308407727" 
+         loading="lazy" 
+         alt="Telegram" 
+         style="margin-left: 10px;" 
+         onerror="return imgerrorfuns(this,'https://img.shields.io/badge/Telegram--lightgrey?logo=Telegram&amp;style=social')" 
+         onclick="window.open('https://t.me/dotycat', '_blank')">
+</p>
+<br/>
 ]])
+
 
 if not uci:get_first("ttlchanger", "ttl") then
     uci:section("ttlchanger", "ttl", nil, { mode = "off", custom_value = "64" })
@@ -66,11 +92,9 @@ custom.default = "65"
 custom:depends("mode", "custom")
 custom.description = "Enter a custom TTL/Hop Limit value (e.g., 64 or 65)"
 
-local author = s:option(DummyValue, "_author", "Developed by")
+local author = s:option(DummyValue, "_author", "APP Info")
 author.rawhtml = true
-author.value = [[
-<a href="https://t.me/dotycat" target="_blank">@dotycat</a> | <a href="https://dotycat.com" target="_blank">dotycat.com</a>
-]]
+author.value = [[* Configure TTL or Hop Limit values for outgoing packets.<br/>* Changing TTL may help bypass certain ISP restrictions.]]
 
 function m.on_commit(map)
     local mode_val = uci:get("ttlchanger", "@ttl[0]", "mode") or "off"
