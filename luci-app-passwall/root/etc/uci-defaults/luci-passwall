@@ -30,6 +30,8 @@ EOF
 touch /etc/config/passwall_show >/dev/null 2>&1
 [ ! -s "/etc/config/passwall" ] && cp -f /usr/share/passwall/0_default_config /etc/config/passwall
 
+chmod +x /usr/share/passwall/*.sh
+
 use_nft=$(uci -q get passwall.@global_forwarding[0].use_nft || echo "0")
 [ "${use_nft}" = "0" ] && {
 	if [ -z "$(command -v iptables-legacy || command -v iptables)" ] || [ -z "$(command -v ipset)" ] || [ -z "$(dnsmasq --version | grep 'Compile time options:.* ipset')" ]; then
